@@ -35,12 +35,16 @@ io.on('connection', (socket) => {
     socket.on('joinServer', ({ serverCode, username, userId, host }) => {
         const server = activeServers[serverCode];
 
-        if (server && server.users.length < 5) {
-            server.users.push({ id: userId, username: username, host: host });
-            socket.join(serverCode);
-            io.to(serverCode).emit('userJoined', { users: server.users });
+        if (server) {
+            if (server && server.users.length < 5) {
+                server.users.push({ id: userId, username: username, host: host });
+                socket.join(serverCode);
+                io.to(serverCode).emit('userJoined', { users: server.users });
+            } else {
+                socket.emit('serverFull');
+            }
         } else {
-            socket.emit('serverFull');
+            socket.emit("joinError", {message: "Join unsuccessfull."});
         }
     });
 
@@ -61,6 +65,8 @@ io.on('connection', (socket) => {
                     delete activeServers[serverCode];
                 }
             }
+        } else {
+            io.to(serverCode).emit('leaveError', {message: "Could not leave server successfully."});
         }
     });
 

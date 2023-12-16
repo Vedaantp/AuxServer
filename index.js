@@ -51,7 +51,7 @@ io.on('connection', (socket) => {
             const hostIndex = server.users.findIndex(user => user.id === userId && user.host);
             if (hostIndex !== -1) {
                 // The user leaving is the host
-                io.to(serverCode).emit('hostLeft');
+                io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
                 delete activeServers[serverCode];
             } else {
                 // The user leaving is not the host

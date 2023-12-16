@@ -62,8 +62,7 @@ function generateUniqueCode() {
 }
 
 const PORT = process.env.PORT || 3000;
-const HOST = 'localhost';
 
-server.listen(PORT, HOST, () => {
-    console.log(`Server running on http://${HOST}:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Server running on port: ${PORT}`);
 });

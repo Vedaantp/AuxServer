@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
         activeServers[serverCode].users[userId] = { username: username, host: host };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
-        io.to(serverCode).emit('userJoined', {users: activeServers[serverCode].users});
+        io.to(serverCode).emit('userJoined', {users: server.users});
     });
 
     socket.on('joinServer', ({ serverCode, username, userId, host }) => {

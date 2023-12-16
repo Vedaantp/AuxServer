@@ -23,20 +23,20 @@ app.get('/activeServers', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    socket.on('createServer', ({ username, userId }) => {
+    socket.on('createServer', ({ username, userId, host }) => {
         const serverCode = generateUniqueCode();
         activeServers[serverCode] = { users: [] };
-        activeServers[serverCode].users.push({ id: userId, username: username });
+        activeServers[serverCode].users.push({ id: userId, username: username, host: host });
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
         io.to(serverCode).emit('userJoined', {users: activeServers[serverCode].users});
     });
 
-    socket.on('joinServer', ({ serverCode, username, userId }) => {
+    socket.on('joinServer', ({ serverCode, username, userId, host }) => {
         const server = activeServers[serverCode];
 
         if (server && server.users.length < 5) {
-            server.users.push({ id: userId, username });
+            server.users.push({ id: userId, username: username, host: host });
             socket.join(serverCode);
             io.to(serverCode).emit('userJoined', { users: server.users });
         } else {
@@ -46,11 +46,20 @@ io.on('connection', (socket) => {
 
     socket.on('leaveServer', ({ serverCode, userId }) => {
         const server = activeServers[serverCode];
+    
         if (server) {
-            server.users = server.users.filter((user) => user.id !== userId);
-            io.to(serverCode).emit('userLeft', { users: server.users });
-            if (server.users.length === 0) {
+            const hostIndex = server.users.findIndex(user => user.id === userId && user.host);
+            if (hostIndex !== -1) {
+                // The user leaving is the host
+                io.to(serverCode).emit('hostLeft');
                 delete activeServers[serverCode];
+            } else {
+                // The user leaving is not the host
+                server.users = server.users.filter((user) => user.id !== userId);
+                io.to(serverCode).emit('userLeft', { users: server.users });
+                if (server.users.length === 0) {
+                    delete activeServers[serverCode];
+                }
             }
         }
     });

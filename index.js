@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
@@ -8,7 +9,13 @@ const io = socketIO(server);
 
 const activeServers = {};
 
+app.use(cors({
+    origin: ['auxapp://'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+}));
 app.use(express.json());
+
 
 app.get('/activeServers', (req, res) => {
     const numberOfServers = Object.keys(activeServers).length;

@@ -82,6 +82,16 @@ io.on('connection', (socket) => {
             startTimerSequence(serverCode);
         }
     });
+
+    socket.on('end', ({serverCode, userId}) => {
+        const server = activeServers[serverCode];
+
+        if (server && server.host.userId === userId) {
+            // Start the timer sequence
+            stopTimers(serverCode);
+        }
+
+    });
 });
 
 function generateUniqueCode() {
@@ -117,6 +127,16 @@ function startTimerSequence(serverCode) {
     // Start the timer sequence
     runTimer(0);
 }
+
+function stopTimers(serverCode) {
+    if (activeServers[serverCode].intervalId) {
+        clearInterval(activeServers[serverCode].intervalId);
+        activeServers[serverCode].intervalId = null; // Reset intervalId to null
+        io.to(serverCode).emit('timersStopped');
+    }
+}
+
+
 
 const PORT = process.env.PORT || 3000;
 

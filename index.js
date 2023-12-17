@@ -23,23 +23,24 @@ app.get('/activeServers', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    socket.on('createServer', ({ username, userId, host }) => {
+    socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [] };
-        activeServers[serverCode].users.push({ userId: userId, username: username, host: host });
+        activeServers[serverCode] = { users: [], host: {} };
+        activeServers[serverCode].host = { userId: userId, username: username };
+        // activeServers[serverCode].users.push({ userId: userId, username: username, host: host });
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
-        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users });
+        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
     });
 
-    socket.on('joinServer', ({ serverCode, username, userId, host }) => {
+    socket.on('joinServer', ({ serverCode, username, userId }) => {
         const server = activeServers[serverCode];
 
         if (server) {
             if (server && server.users.length < 5) {
-                server.users.push({ userId: userId, username: username, host: host });
+                server.users.push({ userId: userId, username: username });
                 socket.join(serverCode);
-                io.to(serverCode).emit('userJoined', { users: server.users });
+                io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
             } else {
                 socket.emit('serverFull');
             }

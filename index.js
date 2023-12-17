@@ -25,7 +25,7 @@ app.get('/activeServers', (req, res) => {
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [], host: {}, intervalId: null };
+        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false };
         activeServers[serverCode].host = { userId: userId, username: username };
         // activeServers[serverCode].users.push({ userId: userId, username: username, host: host });
         socket.join(serverCode);
@@ -45,17 +45,17 @@ io.on('connection', (socket) => {
                 socket.emit('serverFull');
             }
         } else {
-            socket.emit("joinError", {message: "Join unsuccessfull."});
+            socket.emit("joinError", { message: "Join unsuccessfull." });
         }
     });
 
     socket.on('leaveServer', ({ serverCode, userId }) => {
         const server = activeServers[serverCode];
-    
+
         if (server) {
 
             if (server.host.userId === userId) {
-                io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
+                io.to(serverCode).emit('hostLeft', { message: `Host left. ${serverCode} has closed.` });
                 delete activeServers[serverCode];
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
@@ -63,7 +63,7 @@ io.on('connection', (socket) => {
             }
 
         } else {
-            io.emit('leaveError', {message: "Could not leave server successfully."});
+            io.emit('leaveError', { message: "Could not leave server successfully." });
         }
     });
 
@@ -79,16 +79,18 @@ io.on('connection', (socket) => {
 
         if (server && server.host.userId === userId) {
             // Start the timer sequence
-            startTimerSequence(serverCode);
+            server.startTimer = true;
+            startTimerCycle(serverCode);
         }
     });
 
-    socket.on('end', ({serverCode, userId}) => {
+    socket.on('end', ({ serverCode, userId }) => {
         const server = activeServers[serverCode];
 
         if (server && server.host.userId === userId) {
             // Start the timer sequence
-            stopTimers(serverCode);
+            server.startTimer = false;
+            stopTimerCycle(serverCode);
         }
 
     });
@@ -99,40 +101,34 @@ function generateUniqueCode() {
     return code.toString();
 }
 
-function startTimerSequence(serverCode) {
-    const timers = [
-        { event: 'votingPhase', duration: 15000 },
-        { event: 'searchingPhase', duration: 15000 },
-        // Add more phases if needed
-    ];
+function startTimerCycle(serverCode) {
+    function startTimer(timerIndex) {
+        const timerDuration = 15000; // 15 seconds
 
-    function runTimer(index) {
-        const { event, duration } = timers[index];
+        // Schedule the current timer
+        activeServers[serverCode].timer = setTimeout(() => {
+            // Notify clients that the timer has ended
+            io.to(serverCode).emit('timerEnded', { timerIndex });
 
-        io.to(serverCode).emit(event, { countdown: duration / 1000 });
+            // Increment the timer index for the next cycle
+            const nextTimerIndex = (timerIndex + 1) % 2;
 
-        activeServers[serverCode].intervalId = setInterval(() => {
-            // Send countdown updates every second
-            io.to(serverCode).emit('countdownUpdate', { countdown: duration / 1000 });
-            duration -= 1000;
-
-            if (duration <= 0 && activeServers[serverCode].intervalId !== null) {
-                clearInterval(activeServers[serverCode].intervalId);
-                const nextIndex = (index + 1) % timers.length;
-                runTimer(nextIndex);
-            }
-        }, 1000);
+            // Start the next timer in the cycle
+            startTimer(nextTimerIndex);
+        }, timerDuration);
     }
 
-    // Start the timer sequence
-    runTimer(0);
+    // Start the first timer in the cycle
+    if (activeServers[serverCode].startTimer) {
+        startTimer(0);
+    }
 }
 
-function stopTimers(serverCode) {
-    if (activeServers[serverCode].intervalId) {
-        clearInterval(activeServers[serverCode].intervalId);
-        activeServers[serverCode].intervalId = null; // Reset intervalId to null
-        io.to(serverCode).emit('timersStopped');
+function stopTimerCycle(serverCode) {
+    // Clear the active timer if it exists
+    if (activeServers[serverCode].timer) {
+        clearTimeout(activeServers[serverCode].timer);
+        activeServers[serverCode].timer = null;
     }
 }
 

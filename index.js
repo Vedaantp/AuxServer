@@ -103,7 +103,7 @@ function generateUniqueCode() {
 
 function startTimerCycle(serverCode) {
     function startTimer(timerIndex, remainingTime) {
-        const timerDuration = 15000; // 15 seconds
+        let timerDuration = 15000; // 15 seconds
 
         // Send the initial countdown to users
         io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
@@ -124,6 +124,12 @@ function startTimerCycle(serverCode) {
 
                 // Increment the timer index for the next cycle
                 const nextTimerIndex = (timerIndex + 1) % 2;
+
+                if (nextTimerIndex === 0) {
+                    timerDuration = 15000;
+                } else {
+                    timerDuration = 30000;
+                }
 
                 // Start the next timer in the cycle
                 if (activeServers[serverCode].startTimer) {

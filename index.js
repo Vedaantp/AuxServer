@@ -97,15 +97,16 @@ function startTimerSequence(serverCode) {
     ];
 
     function runTimer(index) {
-        if (index < timers.length) {
-            const { event, duration } = timers[index];
+        const { event, duration } = timers[index];
 
-            io.to(serverCode).emit(event);
+        io.to(serverCode).emit(event);
 
-            setTimeout(() => {
-                runTimer(index + 1);
-            }, duration);
-        }
+        setTimeout(() => {
+            // Increment the index, or reset to 0 if it reaches the end
+            const nextIndex = (index + 1) % timers.length;
+
+            runTimer(nextIndex);
+        }, duration);
     }
 
     // Start the timer sequence

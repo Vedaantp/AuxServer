@@ -102,32 +102,51 @@ function generateUniqueCode() {
 }
 
 function startTimerCycle(serverCode) {
-    function startTimer(timerIndex) {
+    function startTimer(timerIndex, remainingTime) {
         const timerDuration = 15000; // 15 seconds
 
-        // Schedule the current timer
-        activeServers[serverCode].timer = setTimeout(() => {
-            // Notify clients that the timer has ended
-            io.to(serverCode).emit('timerEnded', { timerIndex });
+        // Send the initial countdown to users
+        io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
 
-            // Increment the timer index for the next cycle
-            const nextTimerIndex = (timerIndex + 1) % 2;
+        // Schedule countdown updates every second
+        const countdownInterval = setInterval(() => {
+            remainingTime -= 1000;
 
-            // Start the next timer in the cycle
-            startTimer(nextTimerIndex);
-        }, timerDuration);
+            // Send countdown updates to users
+            io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
+
+            // Check if the timer has ended
+            if (remainingTime <= 0) {
+                clearInterval(countdownInterval);
+
+                // Notify clients that the timer has ended
+                io.to(serverCode).emit('timerEnded', { timerIndex });
+
+                // Increment the timer index for the next cycle
+                const nextTimerIndex = (timerIndex + 1) % 2;
+
+                // Start the next timer in the cycle
+                if (activeServers[serverCode].startTimer) {
+                    startTimer(nextTimerIndex, timerDuration);
+                }
+            }
+        }, 1000);
+
+        // Save the interval ID in activeTimers
+        activeServers[serverCode].timer = countdownInterval;
     }
 
     // Start the first timer in the cycle
+
     if (activeServers[serverCode].startTimer) {
-        startTimer(0);
+        startTimer(0, 15000);
     }
 }
 
 function stopTimerCycle(serverCode) {
     // Clear the active timer if it exists
     if (activeServers[serverCode].timer) {
-        clearTimeout(activeServers[serverCode].timer);
+        clearInterval(activeServers[serverCode].timer);
         activeServers[serverCode].timer = null;
     }
 }

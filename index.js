@@ -85,14 +85,14 @@ io.on('connection', (socket) => {
             //     }
             // }
 
-            if (server.host.userId == userId) {
+            if (server.host.userId === userId) {
                 io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
                 delete activeServers[serverCode];
             } else {
                 server.users = server.users.filter((user) => user.id !== userId);
                 io.to(serverCode).emit('userLeft', { users: server.users });
             }
-            
+
         } else {
             io.emit('leaveError', {message: "Could not leave server successfully."});
         }

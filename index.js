@@ -99,14 +99,19 @@ function startTimerSequence(serverCode) {
     function runTimer(index) {
         const { event, duration } = timers[index];
 
-        io.to(serverCode).emit(event);
+        io.to(serverCode).emit(event, { countdown: duration / 1000 });
 
-        setTimeout(() => {
-            // Increment the index, or reset to 0 if it reaches the end
-            const nextIndex = (index + 1) % timers.length;
+        const interval = setInterval(() => {
+            // Send countdown updates every second
+            io.to(serverCode).emit('countdownUpdate', { countdown: duration / 1000 });
+            duration -= 1000;
 
-            runTimer(nextIndex);
-        }, duration);
+            if (duration <= 0) {
+                clearInterval(interval);
+                const nextIndex = (index + 1) % timers.length;
+                runTimer(nextIndex);
+            }
+        }, 1000);
     }
 
     // Start the timer sequence

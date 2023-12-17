@@ -103,8 +103,6 @@ function generateUniqueCode() {
 
 function startTimerCycle(serverCode) {
     function startTimer(timerIndex, remainingTime) {
-        let timerDuration = 30000; // 15 seconds
-
         // Send the initial countdown to users
         io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
 
@@ -125,15 +123,14 @@ function startTimerCycle(serverCode) {
                 // Increment the timer index for the next cycle
                 const nextTimerIndex = (timerIndex + 1) % 2;
 
-                if (nextTimerIndex === 0) {
-                    timerDuration = 30000;
-                } else {
-                    timerDuration = 15000;
-                }
-
                 // Start the next timer in the cycle
                 if (activeServers[serverCode].startTimer) {
-                    startTimer(nextTimerIndex, timerDuration);
+
+                    if (nextTimerIndex === 0) {
+                        startTimer(nextTimerIndex, 30000);
+                    } else {
+                        startTimer(nextTimerIndex, 15000);
+                    }
                 }
             }
         }, 1000);
@@ -145,7 +142,7 @@ function startTimerCycle(serverCode) {
     // Start the first timer in the cycle
 
     if (activeServers[serverCode].startTimer) {
-        startTimer(0, 15000);
+        startTimer(0, 30000);
     }
 }
 

@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
                 io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
                 delete activeServers[serverCode];
             } else {
-                server.users = server.users.filter((user) => user.id !== userId);
+                server.users = server.users.filter((user) => user.userId !== userId);
                 io.to(serverCode).emit('userLeft', { users: server.users });
             }
 

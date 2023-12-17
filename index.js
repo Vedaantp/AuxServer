@@ -68,18 +68,36 @@ io.on('connection', (socket) => {
             // } else {
             //     io.emmit('leaveError', {message: 'User doesnt exist in this server.'});
             // }
-            const hostIndex = server.users.findIndex(user => user.id === userId && user.host === true);
-            if (hostIndex !== -1) {
-                // The user leaving is the host
-                io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
-                delete activeServers[serverCode];
-            } else {
-                // The user leaving is not the host
-                server.users = server.users.filter((user) => user.id !== userId);
-                io.to(serverCode).emit('userLeft', { users: server.users });
-                if (server.users.length === 0) {
+
+
+            // const hostIndex = server.users.findIndex(user => user.id === userId && user.host === true);
+            // if (hostIndex !== -1) {
+            //     // The user leaving is the host
+            //     io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
+            //     delete activeServers[serverCode];
+            // } else {
+            //     // The user leaving is not the host
+            //     server.users = server.users.filter((user) => user.id !== userId);
+            //     io.to(serverCode).emit('userLeft', { users: server.users });
+            //     if (server.users.length === 0) {
+            //         delete activeServers[serverCode];
+            //     }
+            // }
+
+            if (server) {
+                const hostInfo = removeUserAndGetHostInfo(server, userId);
+
+                if (hostInfo) {
+                    io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
                     delete activeServers[serverCode];
+                } else {
+                    io.to(serverCode).emit('userLeft', { users: server.users, hostInfo });
+
+                    if (server.users.length === 0) {
+                        delete activeServers[serverCode];
+                    }
                 }
+                
             }
         } else {
             io.emit('leaveError', {message: "Could not leave server successfully."});
@@ -97,6 +115,19 @@ io.on('connection', (socket) => {
 function generateUniqueCode() {
     const code = Math.floor(100000 + Math.random() * 900000);
     return code.toString();
+}
+
+function removeUserAndGetHostInfo(server, userIdToRemove) {
+    const userIndex = server.users.findIndex(user => user.id === userIdToRemove);
+
+    if (userIndex !== -1) {
+        const deletedUser = server.users[userIndex];
+        server.users.splice(userIndex, 1);
+
+        return deletedUser.host;
+    }
+
+    return null;
 }
 
 const PORT = process.env.PORT || 3000;

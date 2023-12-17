@@ -25,8 +25,8 @@ app.get('/activeServers', (req, res) => {
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId, host }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: {} };
-        activeServers[serverCode].users[userId] = { username: username, host: host };
+        activeServers[serverCode] = { users: [] };
+        activeServers[serverCode].users.push({ userId: userId, username: username, host: host });
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
         io.to(serverCode).emit('userJoined', {users: server.users});
@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
 
         if (server) {
             if (server && server.users.length < 5) {
-                server.users[userId] = { username: username, host: host };
+                server.users.push({ userId: userId, username: username, host: host });
                 socket.join(serverCode);
                 io.to(serverCode).emit('userJoined', { users: server.users });
             } else {
@@ -52,35 +52,35 @@ io.on('connection', (socket) => {
         const server = activeServers[serverCode];
     
         if (server) {
-            const user = server[userId];
+            // const user = server[userId];
 
-            if (user) {
-                if (user.host === true) {
-                    io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
-                    delete activeServers[serverCode];
-                } else {
-                    delete activeServers[serverCode][userId];
-                    io.to(serverCode).emit('userLeft', { users: server.users });
-                    if (server.users.length === 0) {
-                        delete activeServers[serverCode];
-                    }
-                }
-            } else {
-                io.emmit('leaveError', {message: 'User doesnt exist in this server.'});
-            }
-            // const hostIndex = server.users.findIndex(user => user.id === userId && user.host === true);
-            // if (hostIndex !== -1) {
-            //     // The user leaving is the host
-            //     io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
-            //     delete activeServers[serverCode];
-            // } else {
-            //     // The user leaving is not the host
-            //     server.users = server.users.filter((user) => user.id !== userId);
-            //     io.to(serverCode).emit('userLeft', { users: server.users });
-            //     if (server.users.length === 0) {
+            // if (user) {
+            //     if (user.host === true) {
+            //         io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
             //         delete activeServers[serverCode];
+            //     } else {
+            //         delete activeServers[serverCode][userId];
+            //         io.to(serverCode).emit('userLeft', { users: server.users });
+            //         if (server.users.length === 0) {
+            //             delete activeServers[serverCode];
+            //         }
             //     }
+            // } else {
+            //     io.emmit('leaveError', {message: 'User doesnt exist in this server.'});
             // }
+            const hostIndex = server.users.findIndex(user => user.id === userId && user.host === true);
+            if (hostIndex !== -1) {
+                // The user leaving is the host
+                io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
+                delete activeServers[serverCode];
+            } else {
+                // The user leaving is not the host
+                server.users = server.users.filter((user) => user.id !== userId);
+                io.to(serverCode).emit('userLeft', { users: server.users });
+                if (server.users.length === 0) {
+                    delete activeServers[serverCode];
+                }
+            }
         } else {
             io.emit('leaveError', {message: "Could not leave server successfully."});
         }

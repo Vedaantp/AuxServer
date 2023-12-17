@@ -25,7 +25,7 @@ app.get('/activeServers', (req, res) => {
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [], host: {} };
+        activeServers[serverCode] = { users: [], host: {}, intervalId: null };
         activeServers[serverCode].host = { userId: userId, username: username };
         // activeServers[serverCode].users.push({ userId: userId, username: username, host: host });
         socket.join(serverCode);
@@ -101,13 +101,13 @@ function startTimerSequence(serverCode) {
 
         io.to(serverCode).emit(event, { countdown: duration / 1000 });
 
-        const interval = setInterval(() => {
+        activeServers[serverCode].intervalId = setInterval(() => {
             // Send countdown updates every second
             io.to(serverCode).emit('countdownUpdate', { countdown: duration / 1000 });
             duration -= 1000;
 
-            if (duration <= 0) {
-                clearInterval(interval);
+            if (duration <= 0 && activeServers[serverCode].intervalId !== null) {
+                clearInterval(activeServers[serverCode].intervalId);
                 const nextIndex = (index + 1) % timers.length;
                 runTimer(nextIndex);
             }

@@ -53,37 +53,6 @@ io.on('connection', (socket) => {
         const server = activeServers[serverCode];
     
         if (server) {
-            // const user = server[userId];
-
-            // if (user) {
-            //     if (user.host === true) {
-            //         io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
-            //         delete activeServers[serverCode];
-            //     } else {
-            //         delete activeServers[serverCode][userId];
-            //         io.to(serverCode).emit('userLeft', { users: server.users });
-            //         if (server.users.length === 0) {
-            //             delete activeServers[serverCode];
-            //         }
-            //     }
-            // } else {
-            //     io.emmit('leaveError', {message: 'User doesnt exist in this server.'});
-            // }
-
-
-            // const hostIndex = server.users.findIndex(user => user.id === userId && user.host === true);
-            // if (hostIndex !== -1) {
-            //     // The user leaving is the host
-            //     io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
-            //     delete activeServers[serverCode];
-            // } else {
-            //     // The user leaving is not the host
-            //     server.users = server.users.filter((user) => user.id !== userId);
-            //     io.to(serverCode).emit('userLeft', { users: server.users });
-            //     if (server.users.length === 0) {
-            //         delete activeServers[serverCode];
-            //     }
-            // }
 
             if (server.host.userId === userId) {
                 io.to(serverCode).emit('hostLeft', {message: `Host left. ${serverCode} has closed.`});
@@ -104,6 +73,15 @@ io.on('connection', (socket) => {
             io.to(socket.id).emit('userList', { users: server.users });
         }
     });
+
+    socket.on('start', ({ serverCode, userId }) => {
+        const server = activeServers[serverCode];
+
+        if (server && server.host.userId === userId) {
+            // Start the timer sequence
+            startTimerSequence(serverCode);
+        }
+    });
 });
 
 function generateUniqueCode() {
@@ -111,17 +89,27 @@ function generateUniqueCode() {
     return code.toString();
 }
 
-function removeUserAndGetHostInfo(server, userIdToRemove) {
-    const userIndex = server.users.findIndex(user => user.id === userIdToRemove);
+function startTimerSequence(serverCode) {
+    const timers = [
+        { event: 'votingPhase', duration: 15000 },
+        { event: 'searchingPhase', duration: 15000 },
+        // Add more phases if needed
+    ];
 
-    if (userIndex !== -1) {
-        const deletedUser = server.users[userIndex];
-        server.users.splice(userIndex, 1);
+    function runTimer(index) {
+        if (index < timers.length) {
+            const { event, duration } = timers[index];
 
-        return deletedUser.host;
+            io.to(serverCode).emit(event);
+
+            setTimeout(() => {
+                runTimer(index + 1);
+            }, duration);
+        }
     }
 
-    return null;
+    // Start the timer sequence
+    runTimer(0);
 }
 
 const PORT = process.env.PORT || 3000;

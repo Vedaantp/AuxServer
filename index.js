@@ -90,7 +90,7 @@ io.on('connection', (socket) => {
                 delete activeServers[serverCode];
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
-                io.to(serverCode).emit('userLeft', { users: server.users });
+                io.to(serverCode).emit('userLeft', { users: server.users, host: server.host });
             }
 
         } else {

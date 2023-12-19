@@ -27,9 +27,28 @@ io.on('connection', (socket) => {
         const serverCode = generateUniqueCode();
         activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false };
         activeServers[serverCode].host = { userId: userId, username: username };
-        // activeServers[serverCode].users.push({ userId: userId, username: username, host: host });
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
+        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+    });
+
+    socket.on('updateHost', ({ serverCode, username, userId }) => {
+        if (activeServers[serverCode].host.userId === userId) {
+            activeServers[serverCode].host.username = username;
+        }
+
+        socket.join(serverCode);
+        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+    });
+
+    socket.on('updateUser', ({ serverCode, username, userId }) => {
+        const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
+
+        if (userIndex !== -1) {
+            activeServers[serverCode].users[userIndex].username = username
+        }
+
+        socket.join(serverCode);
         io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
     });
 

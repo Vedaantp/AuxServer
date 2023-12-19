@@ -33,23 +33,33 @@ io.on('connection', (socket) => {
     });
 
     socket.on('updateHost', ({ serverCode, username, userId }) => {
-        if (activeServers[serverCode].host.userId === userId) {
-            activeServers[serverCode].host.username = username;
-        }
 
-        socket.join(serverCode);
-        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+        if (activeServers[serverCode]) {
+            if (activeServers[serverCode].host.userId === userId) {
+                activeServers[serverCode].host.username = username;
+            }
+
+            socket.join(serverCode);
+            io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+        } else {
+            socket.emit("joinError", { message: "Join unsuccessfull." });
+        }
     });
 
     socket.on('updateUser', ({ serverCode, username, userId }) => {
-        const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
 
-        if (userIndex !== -1) {
-            activeServers[serverCode].users[userIndex].username = username
+        if (activeServers[serverCode]) {
+            const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
+
+            if (userIndex !== -1) {
+                activeServers[serverCode].users[userIndex].username = username
+            }
+
+            socket.join(serverCode);
+            io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+        } else {
+            socket.emit("joinError", { message: "Join unsuccessfull." });
         }
-
-        socket.join(serverCode);
-        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
     });
 
     socket.on('joinServer', ({ serverCode, username, userId }) => {

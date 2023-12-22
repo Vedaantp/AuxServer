@@ -58,10 +58,19 @@ io.on('connection', (socket) => {
 
             if (userIndex !== -1) {
                 activeServers[serverCode].users[userIndex].username = username
+                socket.join(serverCode);
+                io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+            } else {
+                if (activeServers[serverCode].users.length < 5) {
+                    server.users.push({ userId: userId, username: username, lastHearbeat: Date.now() });
+                    socket.join(serverCode);
+                    io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
+                } else {
+                    socket.emit('serverFull');
+                }
             }
 
-            socket.join(serverCode);
-            io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+            
         } else {
             socket.emit("joinError", { message: "Join unsuccessfull." });
         }
@@ -71,7 +80,7 @@ io.on('connection', (socket) => {
         const server = activeServers[serverCode];
 
         if (server) {
-            if (server && server.users.length < 5) {
+            if (server.users.length < 5) {
                 server.users.push({ userId: userId, username: username, lastHearbeat: Date.now() });
                 socket.join(serverCode);
                 io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
@@ -209,8 +218,10 @@ const checkHeartbeats = (serverCode) => {
 
     if (activeServers[serverCode]) {
         if (currentTime - activeServers[serverCode].host.lastHearbeat > TIME_OUT) {
-            io.to(serverCode).emit('hostLeft', { message: `Host left. ${serverCode} has closed.` });
+            io.to(serverCode).emit('hostTimedOut', { message: `Host left. ${serverCode} has closed.` });
             clearInterval(activeServers[serverCode].heartbeatInterval);
+            server.startTimer = false;
+            stopTimerCycle(serverCode);
             delete activeServers[serverCode];
         }
     }

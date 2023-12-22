@@ -8,7 +8,7 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 const activeServers = {};
-const TIME_OUT = 10000;
+const TIME_OUT = 15000;
 
 app.use(cors({
     origin: ['auxapp://'],
@@ -31,7 +31,7 @@ io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
         activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => {checkHeartbeats(serverCode)}, 5000) };
-        activeServers[serverCode].host = { userId: userId, username: username, lastHearbeat: Date.now() };
+        activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
         io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
                 io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
             } else {
                 if (activeServers[serverCode].users.length < 5) {
-                    server.users.push({ userId: userId, username: username, lastHearbeat: Date.now() });
+                    server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
                     socket.join(serverCode);
                     io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
                 } else {
@@ -81,7 +81,7 @@ io.on('connection', (socket) => {
 
         if (server) {
             if (server.users.length < 5) {
-                server.users.push({ userId: userId, username: username, lastHearbeat: Date.now() });
+                server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
                 socket.join(serverCode);
                 io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
             } else {
@@ -142,14 +142,14 @@ io.on('connection', (socket) => {
         const server = activeServers[serverCode];
 
         if (server && server.host.userId === userId) {
-            server.host.lastHearbeat = Date.now();
+            server.host.lastHeartbeat = Date.now();
         }
 
         else if (server) {
             const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
 
             if (userIndex !== -1) {
-                activeServers[serverCode].users[userIndex].lastHearbeat = Date.now();
+                activeServers[serverCode].users[userIndex].lastHeartbeat = Date.now();
             }
         }
     });
@@ -217,7 +217,7 @@ const checkHeartbeats = (serverCode) => {
     const currentTime = Date.now();
 
     if (activeServers[serverCode]) {
-        if (currentTime - activeServers[serverCode].host.lastHearbeat > TIME_OUT) {
+        if (currentTime - activeServers[serverCode].host.lastHeartbeat > TIME_OUT) {
             io.to(serverCode).emit('hostTimedOut', { message: `Host left. ${serverCode} has closed.` });
             clearInterval(activeServers[serverCode].heartbeatInterval);
             server.startTimer = false;
@@ -228,7 +228,7 @@ const checkHeartbeats = (serverCode) => {
 
     if (activeServers[serverCode]) {
         for (const user in activeServers[serverCode].users) {
-            if (currentTime - user.lastHearbeat > TIME_OUT) {
+            if (currentTime - user.lastHeartbeat > TIME_OUT) {
                 const userId = user.userId;
                 activeServers[serverCode].users = activeServers[serverCode].users.filter((user) => user.userId !== userId);
                 io.to(serverCode).emit('userLeft', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });

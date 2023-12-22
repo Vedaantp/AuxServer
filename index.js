@@ -129,7 +129,22 @@ io.on('connection', (socket) => {
             server.startTimer = false;
             stopTimerCycle(serverCode);
         }
+    });
 
+    socket.on("heartbeat", ({ serverCode, userId }) => {
+        const server = activeServers[serverCode];
+
+        if (server && server.host.userId === userId) {
+            server.host.lastHearbeat = Date.now();
+        }
+
+        else if (server) {
+            const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
+
+            if (userIndex !== -1) {
+                activeServers[serverCode].users[userIndex].lastHearbeat = Date.now();
+            }
+        }
     });
 });
 
@@ -191,7 +206,7 @@ function stopTimerCycle(serverCode) {
     }
 }
 
-function checkHeartbeats (serverCode){
+function checkHeartbeats(serverCode){
     const currentTime = Date.now();
 
     if (activeServers[serverCode]) {

@@ -8,6 +8,9 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 const activeServers = {};
+const TIME_OUT = 10000;
+
+var heartbeatInterval = null;
 
 app.use(cors({
     origin: ['auxapp://'],
@@ -17,18 +20,23 @@ app.use(cors({
 app.use(express.json());
 
 
-app.get('/activeServers', (req, res) => {
+app.get('/amountServers', (req, res) => {
     const numberOfServers = Object.keys(activeServers).length;
     res.json({ numberOfServers });
+});
+
+app.get('/activeServers', (req, res) => {
+    res.json({ activeServers });
 });
 
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
         activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false };
-        activeServers[serverCode].host = { userId: userId, username: username };
+        activeServers[serverCode].host = { userId: userId, username: username, lastHearbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
+        heartbeatInterval = setInterval(checkHeartbeats(serverCode), 5000);
         io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
     });
 
@@ -67,7 +75,7 @@ io.on('connection', (socket) => {
 
         if (server) {
             if (server && server.users.length < 5) {
-                server.users.push({ userId: userId, username: username });
+                server.users.push({ userId: userId, username: username, lastHearbeat: Date.now() });
                 socket.join(serverCode);
                 io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
             } else {
@@ -181,6 +189,28 @@ function stopTimerCycle(serverCode) {
         clearInterval(activeServers[serverCode].timer);
         activeServers[serverCode].timer = null;
     }
+}
+
+function checkHeartbeats (serverCode){
+    const currentTime = Date.now();
+
+    if (activeServers[serverCode]) {
+        if (currentTime - activeServers[serverCode].host.lastHearbeat > TIME_OUT) {
+            io.to(serverCode).emit('hostLeft', { message: `Host left. ${serverCode} has closed.` });
+            delete activeServers[serverCode];
+        }
+    }
+
+    if (activeServers[serverCode]) {
+        for (const user in activeServers[serverCode].users) {
+            if (currentTime - user.lastHearbeat > TIME_OUT) {
+                const userId = user.userId;
+                activeServers[serverCode].users = activeServers[serverCode].users.filter((user) => user.userId !== userId);
+                io.to(serverCode).emit('userLeft', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+            }
+        }
+    }
+
 }
 
 

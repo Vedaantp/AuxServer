@@ -10,8 +10,6 @@ const io = socketIO(server);
 const activeServers = {};
 const TIME_OUT = 10000;
 
-var heartbeatInterval = null;
-
 app.use(cors({
     origin: ['auxapp://'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -32,11 +30,10 @@ app.get('/activeServers', (req, res) => {
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false };
+        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => {checkHeartbeats(serverCode)}, 5000) };
         activeServers[serverCode].host = { userId: userId, username: username, lastHearbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
-        heartbeatInterval = setInterval(checkHeartbeats(serverCode), 5000);
         io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
     });
 
@@ -93,6 +90,7 @@ io.on('connection', (socket) => {
 
             if (server.host.userId === userId) {
                 io.to(serverCode).emit('hostLeft', { message: `Host left. ${serverCode} has closed.` });
+                clearInterval(activeServers[serverCode].heartbeatInterval);
                 delete activeServers[serverCode];
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
@@ -206,12 +204,13 @@ function stopTimerCycle(serverCode) {
     }
 }
 
-function checkHeartbeats(serverCode){
+const checkHeartbeats = (serverCode) => {
     const currentTime = Date.now();
 
     if (activeServers[serverCode]) {
         if (currentTime - activeServers[serverCode].host.lastHearbeat > TIME_OUT) {
             io.to(serverCode).emit('hostLeft', { message: `Host left. ${serverCode} has closed.` });
+            clearInterval(activeServers[serverCode].heartbeatInterval);
             delete activeServers[serverCode];
         }
     }

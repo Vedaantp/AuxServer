@@ -125,7 +125,7 @@ io.on('connection', (socket) => {
                 delete activeServers[serverCode];
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
-                io.to(serverCode).emit('userLeft', { users: server.users, host: server.host });
+                io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
             }
 
         } else {
@@ -254,7 +254,7 @@ const checkHeartbeats = (serverCode) => {
             if (currentTime - user.lastHeartbeat > TIME_OUT) {
                 const userId = user.userId;
                 activeServers[serverCode].users = activeServers[serverCode].users.filter((user) => user.userId !== userId);
-                io.to(serverCode).emit('userLeft', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+                io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
                 io.to(serverCode).emit('userTimedOut', { userId: userId });
             }
         }

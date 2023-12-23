@@ -161,6 +161,7 @@ io.on('connection', (socket) => {
 
         if (server && server.host.userId === userId) {
             server.host.lastHeartbeat = Date.now();
+            io.emit('heartbeatReceived', { message: activeServers[serverCode].host.lastHeartbeat });
         }
 
         else if (server) {

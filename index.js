@@ -80,6 +80,7 @@ io.on('connection', (socket) => {
                 activeServers[serverCode].users[userIndex].lastHeartbeat = Date.now();
                 socket.join(serverCode);
                 io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+                io.to(serverCode).emit('userJoined', { userId: userId });
             } else {
                 if (activeServers[serverCode].users.length < 5) {
                     server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });

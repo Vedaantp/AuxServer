@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
-        io.to(serverCode).emit('userJoined', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+        io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
     });
 
     socket.on('updateHost', ({ serverCode, username, userId }) => {
@@ -84,7 +84,8 @@ io.on('connection', (socket) => {
                 if (activeServers[serverCode].users.length < 5) {
                     server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
                     socket.join(serverCode);
-                    io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
+                    io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+                    io.to(serverCode).emit('userJoined', { userId: userId });
                 } else {
                     socket.emit('serverFull');
                 }
@@ -103,7 +104,8 @@ io.on('connection', (socket) => {
             if (server.users.length < 5) {
                 server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
                 socket.join(serverCode);
-                io.to(serverCode).emit('userJoined', { users: server.users, host: server.host });
+                io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+                io.to(serverCode).emit('userJoined', { userId: userId });
             } else {
                 socket.emit('serverFull');
             }

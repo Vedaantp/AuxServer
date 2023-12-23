@@ -32,11 +32,19 @@ app.get('/activeServers', (req, res) => {
     try {
         const serverInfo = Object.keys(activeServers).map((serverCode) => {
             const serverData = activeServers[serverCode];
+
+            const startTime = new Date(serverData.startTime);
+            const currentTime = new Date();
+            const uptimeMilliseconds = currentTime - startTime;
+
+            const hours = Math.floor(uptimeMilliseconds / 3600000);
+            const minutes = Math.floor((uptimeMilliseconds % 3600000) / 60000);
+            const seconds = Math.floor((uptimeMilliseconds % 60000) / 1000);
+
             return {
                 serverCode,
                 startTime: serverData.startTime,
-                upTime: (Math.floor((new Date()) - (new Date(serverData.startTime)) / 3600000)).toString() + ' hours ' + (Math.floor((((new Date()) - (new Date(serverData.startTime)) / 1000) % 3600) / 60)).toString() + ' minutes ' + (((new Date()) - (new Date(serverData.startTime))) % 60).toString() + ' seconds',
-                // upTime: (Number((((new Date()) - (new Date(serverData.startTime))) / 60000).toFixed(2))).toString() + ' minutes',
+                upTime: `${hours} hours ${minutes} minutes ${seconds} seconds`,
                 host: {
                     userId: serverData.host.userId,
                     username: serverData.host.username,

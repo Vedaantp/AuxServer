@@ -24,7 +24,7 @@ app.get('/amountServers', (req, res) => {
 });
 
 app.get('/activeServers', (req, res) => {
-    res.json({ activeServers });
+    res.json(activeServers);
 });
 
 io.on('connection', (socket) => {

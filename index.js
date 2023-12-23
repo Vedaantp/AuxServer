@@ -34,6 +34,8 @@ app.get('/activeServers', (req, res) => {
             const serverData = activeServers[serverCode];
             return {
                 serverCode,
+                startTime: serverData.startTime,
+                upTime: (new Date()) - (new Date(serverData.startTime)),
                 host: {
                     userId: serverData.host.userId,
                     username: serverData.host.username,
@@ -60,7 +62,9 @@ app.get('/activeServers', (req, res) => {
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 5000) };
+        const currentDate = new Date();
+        const formattedDate = currentDate.toISOString();
+        activeServers[serverCode] = { startTime: formattedDate, users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 5000) };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });

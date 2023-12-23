@@ -82,14 +82,16 @@ io.on('connection', (socket) => {
                 io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
                 io.to(serverCode).emit('userJoined', { userId: userId });
             } else {
-                if (activeServers[serverCode].users.length < 5) {
-                    server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
-                    socket.join(serverCode);
-                    io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
-                    io.to(serverCode).emit('userJoined', { userId: userId });
-                } else {
-                    socket.emit('serverFull');
-                }
+                // if (activeServers[serverCode].users.length < 5) {
+                //     server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
+                //     socket.join(serverCode);
+                //     io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+                //     io.to(serverCode).emit('userJoined', { userId: userId });
+                // } else {
+                //     socket.emit('serverFull');
+                // }
+
+                socket.emit("joinError", { message: "Join unsuccessfull." });
             }
 
             

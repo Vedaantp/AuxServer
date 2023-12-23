@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-const activeServers = {};
+let activeServers = {};
 const TIME_OUT = 900000;
 
 app.use(cors({

@@ -8,7 +8,7 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 let activeServers = {};
-const TIME_OUT = 900000;
+const TIME_OUT = 15000;
 
 app.use(cors({
     origin: ['auxapp://'],
@@ -19,18 +19,36 @@ app.use(express.json());
 
 
 app.get('/amountServers', (req, res) => {
-    const numberOfServers = Object.keys(activeServers).length;
-    res.json({ numberOfServers });
+    try {
+        const numberOfServers = Object.keys(activeServers).length;
+        res.json({ numberOfServers });
+    } catch {
+        console.error('Error handling /amountServers:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 app.get('/activeServers', (req, res) => {
-    res.json(activeServers);
+    try {
+        const activeServersWithoutCircularRefs = JSON.stringify(activeServers, (key, value) => {
+          if (key === 'timer' && value !== null) {
+            return '[Circular: Timer]';
+          }
+          return value;
+        });
+    
+        const sanitizedActiveServers = JSON.parse(activeServersWithoutCircularRefs);
+        res.json(sanitizedActiveServers);
+      } catch (error) {
+        console.error('Error handling /activeServers:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
 });
 
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => {checkHeartbeats(serverCode)}, 60000) };
+        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => {checkHeartbeats(serverCode)}, 5000) };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });

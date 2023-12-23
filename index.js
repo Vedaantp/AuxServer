@@ -31,7 +31,7 @@ app.get('/amountServers', (req, res) => {
 app.get('/activeServers', (req, res) => {
     try {
         const activeServersWithoutCircularRefs = JSON.stringify(activeServers, (key, value) => {
-          if (key === 'timer' && value !== null) {
+          if (key === 'timer') {
             return '[Circular: Timer]';
           }
           return value;
@@ -60,6 +60,7 @@ io.on('connection', (socket) => {
         if (activeServers[serverCode]) {
             if (activeServers[serverCode].host.userId === userId) {
                 activeServers[serverCode].host.username = username;
+                activeServers[serverCode].host.lastHeartbeat = Date.now();
             }
 
             socket.join(serverCode);
@@ -75,7 +76,8 @@ io.on('connection', (socket) => {
             const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
 
             if (userIndex !== -1) {
-                activeServers[serverCode].users[userIndex].username = username
+                activeServers[serverCode].users[userIndex].username = username;
+                activeServers[serverCode].users[userIndex].lastHeartbeat = Date.now();
                 socket.join(serverCode);
                 io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
             } else {

@@ -248,7 +248,7 @@ const checkHeartbeats = (serverCode) => {
     }
 
     if (activeServers[serverCode]) {
-        for (const user in activeServers[serverCode].users) {
+        for (user of activeServers[serverCode].users) {
             if (currentTime - user.lastHeartbeat > TIME_OUT) {
                 const userId = user.userId;
                 activeServers[serverCode].users = activeServers[serverCode].users.filter((user) => user.userId !== userId);

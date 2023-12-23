@@ -43,16 +43,14 @@ app.get('/activeServers', (req, res) => {
                     userId: user.userId,
                     username: user.username,
                     lastHeartbeat: user.lastHeartbeat,
-                })),
-                timer: {
-                    remainingTime: serverData.remainingTime,
-                    timerIndex: serverData.timerIndex,
-                },
-                startTimer: serverData.startTimer,
+                }))
             };
         });
 
-        res.json({ servers: serverInfo });
+        const prettifiedJSON = JSON.stringify({ servers: serverInfo }, null, 4);
+
+        res.setHeader('Content-Type', 'application/json');
+        res.send(prettifiedJSON);
     } catch (error) {
         console.error('Error handling /activeServers:', error);
         res.status(500).json({ error: 'Internal Server Error' });

@@ -30,25 +30,39 @@ app.get('/amountServers', (req, res) => {
 
 app.get('/activeServers', (req, res) => {
     try {
-        const activeServersWithoutCircularRefs = JSON.stringify(activeServers, (key, value) => {
-          if (key === 'timer') {
-            return '[Circular: Timer]';
-          }
-          return value;
+        const serverInfo = Object.keys(activeServers).map((serverCode) => {
+            const serverData = activeServers[serverCode];
+            return {
+                serverCode,
+                host: {
+                    userId: serverData.host.userId,
+                    username: serverData.host.username,
+                    lastHeartbeat: serverData.host.lastHeartbeat,
+                },
+                users: serverData.users.map((user) => ({
+                    userId: user.userId,
+                    username: user.username,
+                    lastHeartbeat: user.lastHeartbeat,
+                })),
+                timer: {
+                    remainingTime: serverData.remainingTime,
+                    timerIndex: serverData.timerIndex,
+                },
+                startTimer: serverData.startTimer,
+            };
         });
-    
-        const sanitizedActiveServers = JSON.parse(activeServersWithoutCircularRefs);
-        res.json(sanitizedActiveServers);
-      } catch (error) {
+
+        res.json({ servers: serverInfo });
+    } catch (error) {
         console.error('Error handling /activeServers:', error);
         res.status(500).json({ error: 'Internal Server Error' });
-      }
+    }
 });
 
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
-        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => {checkHeartbeats(serverCode)}, 5000) };
+        activeServers[serverCode] = { users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 5000) };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
@@ -82,19 +96,11 @@ io.on('connection', (socket) => {
                 io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
                 io.to(serverCode).emit('userJoined', { userId: userId });
             } else {
-                // if (activeServers[serverCode].users.length < 5) {
-                //     server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
-                //     socket.join(serverCode);
-                //     io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
-                //     io.to(serverCode).emit('userJoined', { userId: userId });
-                // } else {
-                //     socket.emit('serverFull');
-                // }
 
                 socket.emit("rejoinError", { message: "Join unsuccessfull." });
             }
 
-            
+
         } else {
             socket.emit("joinError", { message: "Join unsuccessfull." });
         }
@@ -130,7 +136,7 @@ io.on('connection', (socket) => {
                 server.users = server.users.filter((user) => user.userId !== userId);
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
                 io.to(serverCode).emit('userStoppedRejoin', { users: userId });
-                
+
             }
 
         } else {

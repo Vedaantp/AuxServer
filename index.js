@@ -253,6 +253,7 @@ const checkHeartbeats = (serverCode) => {
                 const userId = user.userId;
                 activeServers[serverCode].users = activeServers[serverCode].users.filter((user) => user.userId !== userId);
                 io.to(serverCode).emit('userLeft', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+                io.to(serverCode).emit('userTimedOut', { userId: userId });
             }
         }
     }

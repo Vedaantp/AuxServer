@@ -35,7 +35,7 @@ app.get('/activeServers', (req, res) => {
             return {
                 serverCode,
                 startTime: serverData.startTime,
-                upTime: (new Date()) - (new Date(serverData.startTime)),
+                upTime: ((new Date()) - (new Date(serverData.startTime))) / 60000,
                 host: {
                     userId: serverData.host.userId,
                     username: serverData.host.username,

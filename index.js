@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
                 //     socket.emit('serverFull');
                 // }
 
-                socket.emit("joinError", { message: "Join unsuccessfull." });
+                socket.emit("rejoinError", { message: "Join unsuccessfull." });
             }
 
             

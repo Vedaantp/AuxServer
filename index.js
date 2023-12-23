@@ -127,6 +127,8 @@ io.on('connection', (socket) => {
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+                io.to(serverCode).emit('userStoppedRejoin', { users: userId });
+                
             }
 
         } else {

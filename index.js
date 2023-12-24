@@ -8,7 +8,7 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 let activeServers = {};
-const TIME_OUT = 15000;
+const TIME_OUT = 900000;
 
 app.use(cors({
     origin: ['auxapp://'],
@@ -73,7 +73,7 @@ io.on('connection', (socket) => {
         const serverCode = generateUniqueCode();
         const currentDate = new Date();
         const formattedDate = currentDate.toISOString();
-        activeServers[serverCode] = { startTime: formattedDate, users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 5000) };
+        activeServers[serverCode] = { startTime: formattedDate, users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000) };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });

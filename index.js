@@ -90,6 +90,7 @@ io.on('connection', (socket) => {
 
             socket.join(serverCode);
             io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+            io.to(serverCode).emit("hostRejoined");
         } else {
             socket.emit("joinError", { message: "Join unsuccessfull." });
         }

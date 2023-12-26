@@ -54,7 +54,8 @@ app.get('/activeServers', (req, res) => {
                     userId: user.userId,
                     username: user.username,
                     lastHeartbeat: user.lastHeartbeat,
-                }))
+                })),
+                songRequests: serverData.songRequests,
             };
         });
 
@@ -73,7 +74,15 @@ io.on('connection', (socket) => {
         const serverCode = generateUniqueCode();
         const currentDate = new Date();
         const formattedDate = currentDate.toISOString();
-        activeServers[serverCode] = { startTime: formattedDate, users: [], host: {}, timer: null, startTimer: false, heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000) };
+        activeServers[serverCode] = {
+            startTime: formattedDate,
+            users: [],
+            host: {},
+            timer: null,
+            startTimer: false,
+            heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000),
+            songRequests: []
+        };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
@@ -197,6 +206,23 @@ io.on('connection', (socket) => {
             if (userIndex !== -1) {
                 activeServers[serverCode].users[userIndex].lastHeartbeat = Date.now();
             }
+        }
+    });
+
+    socket.on("songRequest", ({ serverCode, userId, songInfo }) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
+
+            if (userIndex !== -1) {
+                if (songInfo.uri !== '') {
+                    activeServers[serverCode].songRequests.push(songInfo);
+                }
+            }
+
+        } else {
+            // do something
         }
     });
 });

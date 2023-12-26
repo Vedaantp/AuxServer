@@ -81,7 +81,8 @@ io.on('connection', (socket) => {
             timer: null,
             startTimer: false,
             heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000),
-            songRequests: []
+            songRequests: [],
+            votes: {}
         };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
@@ -221,11 +222,41 @@ io.on('connection', (socket) => {
                     sendSongRequests(serverCode);
                 }
             }
-
-        } else {
-            // do something
         }
     });
+
+    socket.on("songVote", ({ serverCode, userId, songInfo }) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            const userIndex = activeServers[serverCode].users.findIndex(user => user.userId === userId);
+
+            if (userIndex !== -1) {
+                if (songInfo.uri !== '') {
+                    if (activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
+                        activeServers[serverCode].votes[songInfo.uri] += 1;
+                    } else { 
+                        activeServers[serverCode].votes[songInfo.uri] = 1;
+                    }
+                } else {
+                    if (!activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
+                        activeServers[serverCode].votes[songInfo.uri] = 0;
+                    }
+                }
+            }
+        }
+    });
+
+    socket.on("getVotedSong", ({ serverCode, userId }) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            if (userId === server.host.userId) {
+                calculateTopSong(serverCode);
+            }
+        }
+    });
+
 });
 
 function generateUniqueCode() {
@@ -262,6 +293,7 @@ function startTimerCycle(serverCode) {
                         activeServers[serverCode].songRequests = [];
                         startTimer(nextTimerIndex, 30000);
                     } else {
+                        activeServers[serverCode].votes = {};
                         startTimer(nextTimerIndex, 15000);
                     }
                 }
@@ -281,6 +313,28 @@ function startTimerCycle(serverCode) {
 
 function sendSongRequests(serverCode) {
     io.to(serverCode).emit("requestedSongs", { songs: activeServers[serverCode].songRequests });
+}
+
+function calculateTopSong(serverCode) {
+
+    let song;
+
+    const maxValue = Math.max(...Object.values(activeServers[serverCode].votes));
+
+    const keysWithMaxValue = Object.keys(activeServers[serverCode].votes).filter(key => activeServers[serverCode].votes[key] === maxValue);
+
+    if (keysWithMaxValue.length > 1) {
+        const randomIndex = Math.floor(Math.random() * keysWithMaxValue.length);
+        song = keysWithMaxValue[randomIndex];
+    } else {
+        song = keysWithMaxValue[0];
+    }
+
+
+    if (song) {
+        io.to(serverCode).emit("votedSong", { uri: song });
+    }
+    
 }
 
 function stopTimerCycle(serverCode) {

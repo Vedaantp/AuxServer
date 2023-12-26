@@ -262,6 +262,7 @@ function startTimerCycle(serverCode) {
                         startTimer(nextTimerIndex, 30000);
                     } else {
                         startTimer(nextTimerIndex, 15000);
+                        setTimeout(sendSongRequests(serverCode), 500);
                     }
                 }
             }
@@ -276,6 +277,10 @@ function startTimerCycle(serverCode) {
     if (activeServers[serverCode].startTimer) {
         startTimer(0, 30000);
     }
+}
+
+function sendSongRequests(serverCode) {
+    io.to(serverCode).emit("requestedSongs", { songs: activeServers[serverCode].songRequests });
 }
 
 function stopTimerCycle(serverCode) {

@@ -218,6 +218,7 @@ io.on('connection', (socket) => {
             if (userIndex !== -1) {
                 if (songInfo.uri !== '') {
                     activeServers[serverCode].songRequests.push(songInfo);
+                    sendSongRequests(serverCode);
                 }
             }
 
@@ -262,7 +263,6 @@ function startTimerCycle(serverCode) {
                         startTimer(nextTimerIndex, 30000);
                     } else {
                         startTimer(nextTimerIndex, 15000);
-                        sendSongRequests(serverCode);
                     }
                 }
             }

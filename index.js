@@ -258,6 +258,7 @@ function startTimerCycle(serverCode) {
                 if (activeServers[serverCode].startTimer) {
 
                     if (nextTimerIndex === 0) {
+                        activeServers[serverCode].songRequests = [];
                         startTimer(nextTimerIndex, 30000);
                     } else {
                         startTimer(nextTimerIndex, 15000);

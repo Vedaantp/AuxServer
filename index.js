@@ -262,7 +262,7 @@ function startTimerCycle(serverCode) {
                         startTimer(nextTimerIndex, 30000);
                     } else {
                         startTimer(nextTimerIndex, 15000);
-                        setTimeout(sendSongRequests(serverCode), 500);
+                        sendSongRequests(serverCode);
                     }
                 }
             }

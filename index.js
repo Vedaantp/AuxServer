@@ -341,6 +341,8 @@ function calculateTopSong(serverCode) {
 
     if (song) {
         io.to(serverCode).emit("votedSong", { uri: song });
+    } else {
+        io.to(serverCode).emit('votedSong', { uri: '' });
     }
 
 }

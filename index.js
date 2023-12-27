@@ -340,9 +340,9 @@ function calculateTopSong(serverCode) {
 
 
     if (song) {
-        io.to(serverCode).emit("votedSong", { uri: song });
+        io.to(serverCode).emit("votedSong", { uri: song, requests: activeServers[serverCode].songRequests, votes: activeServers[serverCode].votes });
     } else {
-        io.to(serverCode).emit('votedSong', { uri: '' });
+        io.to(serverCode).emit('votedSong', { uri: '', requests: activeServers[serverCode].songRequests, votes: activeServers[serverCode].votes });
     }
 
 }

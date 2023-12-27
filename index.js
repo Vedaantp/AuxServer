@@ -225,7 +225,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on("songVote", ({ serverCode, userId, songInfo }) => {
+    socket.on("songVote", ({ serverCode, userId, songInfo, voted }) => {
         const server = activeServers[serverCode];
 
         if (server) {
@@ -233,15 +233,23 @@ io.on('connection', (socket) => {
 
             if (userIndex !== -1) {
                 if (songInfo.uri !== '') {
-                    if (activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
-                        activeServers[serverCode].votes[songInfo.uri] += 1;
-                    } else { 
-                        activeServers[serverCode].votes[songInfo.uri] = 1;
+                    if (voted) {
+                        if (activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
+                            activeServers[serverCode].votes[songInfo.uri] += 1;
+                        } else {
+                            activeServers[serverCode].votes[songInfo.uri] = 1;
+                        }
+                    } else {
+                        if (activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
+                            activeServers[serverCode].votes[songInfo.uri] = 0;
+                        }
                     }
-                } else {
-                    if (!activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
-                        activeServers[serverCode].votes[songInfo.uri] = 0;
-                    }
+
+
+                    // } else {
+                    //     if (!activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
+                    //         activeServers[serverCode].votes[songInfo.uri] = 0;
+                    //     }
                 }
             }
         }
@@ -334,7 +342,7 @@ function calculateTopSong(serverCode) {
     if (song) {
         io.to(serverCode).emit("votedSong", { uri: song });
     }
-    
+
 }
 
 function stopTimerCycle(serverCode) {

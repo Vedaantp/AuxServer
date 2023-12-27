@@ -240,7 +240,7 @@ io.on('connection', (socket) => {
                             activeServers[serverCode].votes[songInfo.uri] = 1;
                         }
                     } else {
-                        if (activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
+                        if (!activeServers[serverCode].votes.hasOwnProperty(songInfo.uri)) {
                             activeServers[serverCode].votes[songInfo.uri] = 0;
                         }
                     }

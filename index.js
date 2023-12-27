@@ -301,7 +301,7 @@ function startTimerCycle(serverCode) {
                         activeServers[serverCode].songRequests = [];
                         startTimer(nextTimerIndex, 30000);
                     } else {
-                        activeServers[serverCode].votes = {};
+                        // activeServers[serverCode].votes = {};
                         startTimer(nextTimerIndex, 15000);
                     }
                 }
@@ -344,6 +344,8 @@ function calculateTopSong(serverCode) {
     } else {
         io.to(serverCode).emit('votedSong', { uri: '', requests: activeServers[serverCode].songRequests, votes: activeServers[serverCode].votes });
     }
+
+    activeServers[serverCode].votes = {};
 
 }
 

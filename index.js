@@ -17,6 +17,13 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.get('/serverStatus', (req, res) => {
+    try {
+        
+    } catch {
+        res.status(503).json({ error: 'Server is offline' });
+    }
+});
 
 app.get('/amountServers', (req, res) => {
     try {

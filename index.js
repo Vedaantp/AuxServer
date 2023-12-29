@@ -19,7 +19,7 @@ app.use(express.json());
 
 app.get('/serverStatus', (req, res) => {
     try {
-        
+        res.status(200).json({ status: "Server is online" });
     } catch {
         res.status(503).json({ error: 'Server is offline' });
     }

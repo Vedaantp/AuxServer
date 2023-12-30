@@ -272,6 +272,16 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("songInfo", ({ serverCode, userId, songInfo }) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            if (server.host.userId === userId) {
+                socket.to(serverCode).emit("currentSongInfo", {songInfo});
+            }
+        }
+    });
+
 });
 
 function generateUniqueCode() {

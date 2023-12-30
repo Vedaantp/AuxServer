@@ -277,7 +277,7 @@ io.on('connection', (socket) => {
 
         if (server) {
             if (server.host.userId === userId) {
-                socket.to(serverCode).emit("currentSongInfo", {songInfo});
+                io.to(serverCode).emit("currentSongInfo", {songInfo});
             }
         }
     });

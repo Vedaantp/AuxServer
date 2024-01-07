@@ -92,7 +92,6 @@ io.on('connection', (socket) => {
             heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000),
             songRequests: [],
             votes: {},
-            sessionTime: Date.now()
         };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
@@ -306,7 +305,15 @@ io.on('connection', (socket) => {
         const server = activeServers[serverCode];
 
         if (server) {
-            io.to(serverCode).emit("currentSessionTime", {serverTime: activeServers[serverCode].sessionTime});
+            const startTime = new Date(server.startTime);
+            const currentTime = new Date();
+            const uptimeMilliseconds = currentTime - startTime;
+
+            const hours = Math.floor(uptimeMilliseconds / 3600000);
+            const minutes = Math.floor((uptimeMilliseconds % 3600000) / 60000);
+            const seconds = Math.floor((uptimeMilliseconds % 60000) / 1000);
+
+            io.to(serverCode).emit("currentSessionTime", {hours: hours, minutes: minutes, seconds: seconds});
         }
     });
 

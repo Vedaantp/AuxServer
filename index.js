@@ -76,6 +76,8 @@ app.get('/activeServers', (req, res) => {
     }
 });
 
+// add a runtime to the servers
+
 io.on('connection', (socket) => {
     socket.on('createServer', ({ username, userId }) => {
         const serverCode = generateUniqueCode();
@@ -89,7 +91,8 @@ io.on('connection', (socket) => {
             startTimer: false,
             heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000),
             songRequests: [],
-            votes: {}
+            votes: {},
+            sessionTime: Date.now()
         };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
@@ -139,11 +142,18 @@ io.on('connection', (socket) => {
         const server = activeServers[serverCode];
 
         if (server) {
-            if (server.users.length < 5) {
+            if (server.users.length < 4) {
                 server.users.push({ userId: userId, username: username, lastHeartbeat: Date.now() });
                 socket.join(serverCode);
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
                 io.to(serverCode).emit('userJoined', { userId: userId });
+
+                if (server.users.length >= 3 && !server.startTimer) {
+                    server.startTimer = true;
+                    startTimerCycle(serverCode);
+                } else {
+                    io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
+                }
             } else {
                 socket.emit('serverFull');
             }
@@ -160,9 +170,19 @@ io.on('connection', (socket) => {
             if (server.host.userId === userId) {
                 io.to(serverCode).emit('hostLeft', { message: `Host left. ${serverCode} has closed.` });
                 clearInterval(activeServers[serverCode].heartbeatInterval);
+                server.startTimer = false;
+                stopTimerCycle(serverCode);
                 delete activeServers[serverCode];
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
+
+                if (server.users.length < 3 && server.startTimer) {
+                    server.startTimer = false;
+                    stopTimerCycle(serverCode);
+
+                    io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
+                }
+
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
                 io.to(serverCode).emit('userStoppedRejoin', { users: userId });
 
@@ -176,7 +196,7 @@ io.on('connection', (socket) => {
     socket.on('getUsers', ({ serverCode }) => {
         const server = activeServers[serverCode];
         if (server) {
-            io.to(socket.id).emit('userList', { users: server.users });
+            io.to(socket.id).emit('userList', { host: server.host, users: server.users });
         }
     });
 
@@ -186,7 +206,7 @@ io.on('connection', (socket) => {
         if (server && server.host.userId === userId) {
             // Start the timer sequence
             server.startTimer = true;
-            startTimerCycle(serverCode);
+            startTimerCycle(serverCode);            
         }
     });
 
@@ -279,6 +299,14 @@ io.on('connection', (socket) => {
             if (server.host.userId === userId) {
                 io.to(serverCode).emit("currentSongInfo", {songInfo});
             }
+        }
+    });
+
+    socket.on("sessionTime", ({serverCode}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            io.to(serverCode).emit("currentSessionTime", {serverTime: activeServers[serverCode].sessionTime});
         }
     });
 

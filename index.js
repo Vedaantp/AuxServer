@@ -317,6 +317,16 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("joinServerCode", ({serverCode}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            socket.join(serverCode);
+            io.to(serverCode).emit("connectedToCode", {message: "Connected"});
+            io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+        }
+    });
+
 });
 
 function generateUniqueCode() {

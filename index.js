@@ -92,6 +92,7 @@ io.on('connection', (socket) => {
             heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000),
             songRequests: [],
             votes: {},
+            queueList: [],
         };
         activeServers[serverCode].host = { userId: userId, username: username, lastHeartbeat: Date.now() };
         socket.join(serverCode);
@@ -325,6 +326,16 @@ io.on('connection', (socket) => {
             io.to(serverCode).emit("connectedToCode", {message: "Connected"});
             io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
         }
+    });
+
+    socket.on("hostQueueList", ({songs, serverCode}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            activeServers[serverCode].queueList = songs;
+        }
+
+        io.to(serverCode).emit("queueListUpdate", { songs: activeServers[serverCode].queueList });
     });
 
 });

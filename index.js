@@ -333,9 +333,18 @@ io.on('connection', (socket) => {
 
         if (server) {
             activeServers[serverCode].queueList = songs;
+
+            io.to(serverCode).emit("queueListUpdate", { songs: activeServers[serverCode].queueList });
         }
 
-        io.to(serverCode).emit("queueListUpdate", { songs: activeServers[serverCode].queueList });
+    });
+
+    socket.on("queueList", ({serverCode}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            io.to(serverCode).emit("queueListUpdate", { songs: activeServers[serverCode].queueList });
+        }
     });
 
 });

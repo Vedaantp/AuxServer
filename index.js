@@ -350,8 +350,16 @@ io.on('connection', (socket) => {
 });
 
 function generateUniqueCode() {
-    const code = Math.floor(100000 + Math.random() * 900000);
-    return code.toString();
+    // const code = Math.floor(100000 + Math.random() * 900000);
+    // return code.toString();
+
+    let code;
+
+    do {
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+    } while (activeServers[code]);
+
+    return code;
 }
 
 function startTimerCycle(serverCode) {

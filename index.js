@@ -194,6 +194,29 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("kickUser", ({serverCode, kickId}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+
+            server.users = server.users.filter((user) => user.userId !== kickId);
+
+            if (server.users.length < 3 && server.startTimer) {
+                server.startTimer = false;
+                stopTimerCycle(serverCode);
+
+                io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
+            }
+
+            io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+            io.to(serverCode).emit("kickedUser", { userId: kickId });
+
+        } else {
+            io.emit('leaveError', { message: "Could not leave server successfully." });
+        }
+
+    });
+
     socket.on('getUsers', ({ serverCode }) => {
         const server = activeServers[serverCode];
         if (server) {

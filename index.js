@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
             users: [],
             host: {},
             timer: null,
-            startTimer: false,
+            startTimer: true,
             heartbeatInterval: setInterval(() => { checkHeartbeats(serverCode) }, 60000),
             songRequests: [],
             votes: {},
@@ -394,7 +394,7 @@ function startTimerCycle(serverCode) {
             interval -= 1000;
 
             if (interval <= 0) {
-                clearInterval(activeServers[serverCode].tiemr);
+                clearInterval(activeServers[serverCode].timer);
 
                 if (activeServers[serverCode].startTimer) {
                     io.to(serverCode).emit("songVoted", { message: "Song voted"});

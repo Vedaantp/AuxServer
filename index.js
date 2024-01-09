@@ -184,6 +184,7 @@ io.on('connection', (socket) => {
                 }
 
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
+                io.to(serverCode).emit("userLeft", { userId: userId });
                 io.to(serverCode).emit('userStoppedRejoin', { users: userId });
 
             }
@@ -350,9 +351,6 @@ io.on('connection', (socket) => {
 });
 
 function generateUniqueCode() {
-    // const code = Math.floor(100000 + Math.random() * 900000);
-    // return code.toString();
-
     let code;
 
     do {

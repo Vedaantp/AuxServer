@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const { start } = require('repl');
 const socketIO = require('socket.io');
 // const cors = require('cors');
 
@@ -98,6 +99,7 @@ io.on('connection', (socket) => {
         socket.join(serverCode);
         socket.emit('serverCreated', { serverCode });
         io.to(serverCode).emit('updateUsers', { users: activeServers[serverCode].users, host: activeServers[serverCode].host });
+        startTimerCycle(serverCode);
     });
 
     socket.on('updateHost', ({ serverCode, username, userId }) => {
@@ -148,12 +150,12 @@ io.on('connection', (socket) => {
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
                 io.to(serverCode).emit('userJoined', { userId: userId });
 
-                if (server.users.length >= 3 && !server.startTimer) {
-                    server.startTimer = true;
-                    startTimerCycle(serverCode);
-                } else {
-                    io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
-                }
+                // if (server.users.length >= 3 && !server.startTimer) {
+                //     server.startTimer = true;
+                //     startTimerCycle(serverCode);
+                // } else {
+                //     io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
+                // }
             } else {
                 socket.emit('serverFull');
             }
@@ -176,12 +178,12 @@ io.on('connection', (socket) => {
             } else {
                 server.users = server.users.filter((user) => user.userId !== userId);
 
-                if (server.users.length < 3 && server.startTimer) {
-                    server.startTimer = false;
-                    stopTimerCycle(serverCode);
+                // if (server.users.length < 3 && server.startTimer) {
+                //     server.startTimer = false;
+                //     stopTimerCycle(serverCode);
 
-                    io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
-                }
+                //     io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
+                // }
 
                 io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
                 io.to(serverCode).emit("userLeft", { userId: userId });
@@ -201,12 +203,12 @@ io.on('connection', (socket) => {
 
             server.users = server.users.filter((user) => user.userId !== kickId);
 
-            if (server.users.length < 3 && server.startTimer) {
-                server.startTimer = false;
-                stopTimerCycle(serverCode);
+            // if (server.users.length < 3 && server.startTimer) {
+            //     server.startTimer = false;
+            //     stopTimerCycle(serverCode);
 
-                io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
-            }
+            //     io.to(serverCode).emit("timerEnded", { timerIndex: -1 });
+            // }
 
             io.to(serverCode).emit('updateUsers', { users: server.users, host: server.host });
             io.to(serverCode).emit("kickedUser", { userId: kickId });
@@ -384,51 +386,78 @@ function generateUniqueCode() {
 }
 
 function startTimerCycle(serverCode) {
-    function startTimer(timerIndex, remainingTime) {
-        // Send the initial countdown to users
-        io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
+    const server = activeServers[serverCode];
 
-        // Schedule countdown updates every second
-        const countdownInterval = setInterval(() => {
-            remainingTime -= 1000;
+    function startTimer(interval) {
 
-            // Send countdown updates to users
-            io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
+        activeServers[serverCode].timer = setInterval(() => {
+            interval -= 1000;
 
-            // Check if the timer has ended
-            if (remainingTime <= 0) {
-                clearInterval(countdownInterval);
+            if (interval <= 0) {
+                clearInterval(activeServers[serverCode].tiemr);
 
-                // Notify clients that the timer has ended
-                io.to(serverCode).emit('timerEnded', { timerIndex });
-
-                // Increment the timer index for the next cycle
-                const nextTimerIndex = (timerIndex + 1) % 2;
-
-                // Start the next timer in the cycle
                 if (activeServers[serverCode].startTimer) {
-
-                    if (nextTimerIndex === 0) {
-                        activeServers[serverCode].songRequests = [];
-                        startTimer(nextTimerIndex, 30000);
-                    } else {
-                        // activeServers[serverCode].votes = {};
-                        startTimer(nextTimerIndex, 15000);
-                    }
+                    io.to(serverCode).emit("songVoted", { message: "Song voted"});
+                    startTimer(30000);
                 }
             }
+
         }, 1000);
 
-        // Save the interval ID in activeTimers
-        activeServers[serverCode].timer = countdownInterval;
     }
 
-    // Start the first timer in the cycle
-
-    if (activeServers[serverCode].startTimer) {
-        startTimer(0, 30000);
+    if (server && server.startTimer) {
+        startTimer(30000);
     }
+
 }
+
+// function startTimerCycle(serverCode) {
+//     function startTimer(timerIndex, remainingTime) {
+//         // Send the initial countdown to users
+//         io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
+
+//         // Schedule countdown updates every second
+//         const countdownInterval = setInterval(() => {
+//             remainingTime -= 1000;
+
+//             // Send countdown updates to users
+//             io.to(serverCode).emit('countdownUpdate', { timerIndex, remainingTime });
+
+//             // Check if the timer has ended
+//             if (remainingTime <= 0) {
+//                 clearInterval(countdownInterval);
+
+//                 // Notify clients that the timer has ended
+//                 io.to(serverCode).emit('timerEnded', { timerIndex });
+
+//                 // Increment the timer index for the next cycle
+//                 const nextTimerIndex = (timerIndex + 1) % 2;
+
+//                 // Start the next timer in the cycle
+//                 if (activeServers[serverCode].startTimer) {
+
+//                     if (nextTimerIndex === 0) {
+//                         activeServers[serverCode].songRequests = [];
+//                         startTimer(nextTimerIndex, 30000);
+//                     } else {
+//                         // activeServers[serverCode].votes = {};
+//                         startTimer(nextTimerIndex, 15000);
+//                     }
+//                 }
+//             }
+//         }, 1000);
+
+//         // Save the interval ID in activeTimers
+//         activeServers[serverCode].timer = countdownInterval;
+//     }
+
+//     // Start the first timer in the cycle
+
+//     if (activeServers[serverCode].startTimer) {
+//         startTimer(0, 30000);
+//     }
+// }
 
 function sendSongRequests(serverCode) {
     io.to(serverCode).emit("requestedSongs", { songs: activeServers[serverCode].songRequests });

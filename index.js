@@ -492,6 +492,7 @@ function calculateTopSong(serverCode) {
 function stopTimerCycle(serverCode) {
     // Clear the active timer if it exists
     if (activeServers[serverCode].timer) {
+        activeServers[serverCode].startTimer = false;
         clearInterval(activeServers[serverCode].timer);
         activeServers[serverCode].timer = null;
     }

@@ -373,7 +373,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on("votingSong", ({serverCode, songInfo}) => {
+    socket.on("votingSong", ({serverCode, songInfo, userId}) => {
         const server = activeServers[serverCode];
 
         if (server) {
@@ -385,6 +385,7 @@ io.on('connection', (socket) => {
                     name: songInfo.name,
                     artists: songInfo.artist,
                     image: songInfo.image,
+                    userId: userId
                 };
             }
 
@@ -495,12 +496,12 @@ function calcVotes(serverCode, endTimer) {
             io.to(serverCode).emit("updateVoteList", {votes: []});
 
         } else {
-            const orderedList = orderList(serverCode);
+            let orderedList = orderList(serverCode);
 
             if (endTimer) {
                 io.to(serverCode).emit("songVoted", {songURI: orderedList[0]});
-                orderedList.shift();
                 delete activeServers[serverCode].votes[orderedList[0].uri];
+                orderedList.shift();
                 // delete the voted song from list
             }
 
@@ -514,18 +515,17 @@ function orderList(serverCode) {
     const server = activeServers[serverCode];
 
     if (server) {
-        const votesArray = Object.keys(activeServers[serverCode].votes).map((key) => ({
+        let votesArray = Object.keys(activeServers[serverCode].votes).map((key) => ({
             uri: key,
             votes: activeServers[serverCode].votes[key].votes,
             name: activeServers[serverCode].votes[key].name,
             artists: activeServers[serverCode].votes[key].artists,
             image: activeServers[serverCode].votes[key].image,
+            userId: activeServers[serverCode].votes[key].userId,
           }));
         
           // Sort the array by the "votes" property in descending order
-          const sortedVotes = votesArray.sort((a, b) => b.votes - a.votes);
-        
-          return sortedVotes;
+          return votesArray.sort((a, b) => b.votes - a.votes);
     }
 
 }

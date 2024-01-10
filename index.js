@@ -381,7 +381,7 @@ io.on('connection', (socket) => {
                 activeServers[serverCode].votes[songInfo.uri].votes += 1;
             } else {
                 activeServers[serverCode].votes[songInfo.uri] = {
-                    votes: 0,
+                    votes: 1,
                     name: songInfo.name,
                     artists: songInfo.artist,
                     image: songInfo.image,
@@ -515,10 +515,10 @@ function orderList(serverCode) {
     if (server) {
         const votesArray = Object.keys(activeServers[serverCode].votes).map((key) => ({
             uri: key,
-            votes: dictionary[key].votes,
-            name: dictionary[key].name,
-            artists: dictionary[key].artists,
-            image: dictionary[key].image,
+            votes: activeServers[serverCode].votes[key].votes,
+            name: activeServers[serverCode].votes[key].name,
+            artists: activeServers[serverCode].votes[key].artists,
+            image: activeServers[serverCode].votes[key].image,
           }));
         
           // Sort the array by the "votes" property in descending order

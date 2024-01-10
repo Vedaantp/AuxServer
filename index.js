@@ -382,11 +382,11 @@ io.on('connection', (socket) => {
                 if (activeServers[serverCode].votes[songInfo.uri].userId === userId) {
                     io.to(serverCode).emit("cannotVoteSelf", {userId: userId});
                 } else {
-                    activeServers[serverCode].votes[songInfo.uri].votes += 1;
+                    activeServers[serverCode].votes[songInfo.uri].votes.push(userId);
                 }
             } else {
                 activeServers[serverCode].votes[songInfo.uri] = {
-                    votes: 0,
+                    votes: [],
                     name: songInfo.name,
                     artists: songInfo.artist,
                     image: songInfo.image,
@@ -538,7 +538,7 @@ function orderList(serverCode) {
           }));
         
           // Sort the array by the "votes" property in descending order
-          return votesArray.sort((a, b) => b.votes - a.votes);
+          return votesArray.sort((a, b) => b.votes.length - a.votes.length);
     }
 
 }

@@ -381,6 +381,8 @@ io.on('connection', (socket) => {
             if (activeServers[serverCode].votes[songInfo.uri]) {
                 if (activeServers[serverCode].votes[songInfo.uri].userId === userId) {
                     io.to(serverCode).emit("cannotVoteSelf", {userId: userId});
+                } else if (activeServers[serverCode].votes[songInfo.uri].votes.includes(userId)) {
+                    activeServers[serverCode].votes[songInfo.uri].votes = activeServers[serverCode].votes[songInfo.uri].votes.filter(item => item !== userId);
                 } else {
                     activeServers[serverCode].votes[songInfo.uri].votes.push(userId);
                 }

@@ -500,6 +500,7 @@ function calcVotes(serverCode, endTimer) {
             if (endTimer) {
                 io.to(serverCode).emit("songVoted", {songURI: orderedList[0]});
                 orderedList.shift();
+                delete activeServers[serverCode].votes[orderList[0].uri];
                 // delete the voted song from list
             }
 

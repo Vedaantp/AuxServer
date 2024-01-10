@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const { userInfo } = require('os');
 const { start } = require('repl');
 const socketIO = require('socket.io');
 // const cors = require('cors');
@@ -378,10 +379,14 @@ io.on('connection', (socket) => {
 
         if (server) {
             if (activeServers[serverCode].votes[songInfo.uri]) {
-                activeServers[serverCode].votes[songInfo.uri].votes += 1;
+                if (activeServers[serverCode].votes[songInfo.uri].userId === userId) {
+                    io.to(serverCode).emit("cannotVoteSelf", {userId: userId});
+                } else {
+                    activeServers[serverCode].votes[songInfo.uri].votes += 1;
+                }
             } else {
                 activeServers[serverCode].votes[songInfo.uri] = {
-                    votes: 1,
+                    votes: 0,
                     name: songInfo.name,
                     artists: songInfo.artist,
                     image: songInfo.image,

@@ -513,7 +513,7 @@ function orderList(serverCode) {
     const server = activeServers[serverCode];
 
     if (server) {
-        const votesArray = Object.keys(dictionary).map((key) => ({
+        const votesArray = Object.keys(activeServers[serverCode].votes).map((key) => ({
             uri: key,
             votes: dictionary[key].votes,
             name: dictionary[key].name,

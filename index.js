@@ -379,20 +379,17 @@ io.on('connection', (socket) => {
 
         if (server) {
             if (activeServers[serverCode].votes[songInfo.uri]) {
-                if (activeServers[serverCode].votes[songInfo.uri].userId === userId) {
-                    io.to(serverCode).emit("cannotVoteSelf", {userId: userId});
-                } else if (activeServers[serverCode].votes[songInfo.uri].votes.includes(userId)) {
+                if (activeServers[serverCode].votes[songInfo.uri].votes.includes(userId)) {
                     activeServers[serverCode].votes[songInfo.uri].votes = activeServers[serverCode].votes[songInfo.uri].votes.filter(item => item !== userId);
                 } else {
                     activeServers[serverCode].votes[songInfo.uri].votes.push(userId);
                 }
             } else {
                 activeServers[serverCode].votes[songInfo.uri] = {
-                    votes: [],
+                    votes: [userId,],
                     name: songInfo.name,
                     artists: songInfo.artist,
                     image: songInfo.image,
-                    userId: userId
                 };
             }
 
@@ -536,7 +533,6 @@ function orderList(serverCode) {
             name: activeServers[serverCode].votes[key].name,
             artists: activeServers[serverCode].votes[key].artists,
             image: activeServers[serverCode].votes[key].image,
-            userId: activeServers[serverCode].votes[key].userId,
           }));
         
           // Sort the array by the "votes" property in descending order

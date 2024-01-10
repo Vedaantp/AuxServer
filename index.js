@@ -64,7 +64,7 @@ app.get('/activeServers', (req, res) => {
                     username: user.username,
                     lastHeartbeat: user.lastHeartbeat,
                 })),
-                songRequests: serverData.songRequests,
+                songRequests: serverData.votes,
             };
         });
 
@@ -399,6 +399,14 @@ io.on('connection', (socket) => {
 
     });
 
+    socket.on("getVoteList", ({serverCode}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            calcVotes(serverCode, false);
+        }
+    });
+
 });
 
 function generateUniqueCode() {
@@ -495,7 +503,7 @@ function calcVotes(serverCode, endTimer) {
     if (server) {
         if (Object.keys(activeServers[serverCode].votes).length === 0) {
             if (endTimer) {
-                io.to(serverCode).emit("songVoted", {songURI: null});
+                io.to(serverCode).emit("songVoted", {songInfo: null});
             }
 
             io.to(serverCode).emit("updateVoteList", {votes: []});
@@ -504,7 +512,7 @@ function calcVotes(serverCode, endTimer) {
             let orderedList = orderList(serverCode);
 
             if (endTimer) {
-                io.to(serverCode).emit("songVoted", {songURI: orderedList[0]});
+                io.to(serverCode).emit("songVoted", {songInfo: orderedList[0]});
                 delete activeServers[serverCode].votes[orderedList[0].uri];
                 orderedList.shift();
                 // delete the voted song from list

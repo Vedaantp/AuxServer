@@ -488,7 +488,7 @@ function calcVotes(serverCode, endTimer) {
     const server = activeServers[serverCode];
 
     if (server) {
-        if (activeServers[serverCode].votes.length === 0) {
+        if (Object.keys(activeServers[serverCode].votes).length === 0) {
             if (endTimer) {
                 io.to(serverCode).emit("songVoted", {songURI: null});
             }

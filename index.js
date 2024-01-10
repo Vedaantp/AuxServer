@@ -373,6 +373,26 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("votingSong", ({serverCode, songInfo}) => {
+        const server = activeServers[serverCode];
+
+        if (server) {
+            if (activeServers[serverCode].votes[songInfo.uri]) {
+                activeServers[serverCode].votes[songInfo.uri].votes += 1;
+            } else {
+                activeServers[serverCode].votes[songInfo.uri] = {
+                    votes: 0,
+                    name: songInfo.name,
+                    artists: songInfo.artist,
+                    image: songInfo.image,
+                };
+            }
+
+            calcVotes(serverCode, false);
+        }
+
+    });
+
 });
 
 function generateUniqueCode() {
@@ -397,7 +417,7 @@ function startTimerCycle(serverCode) {
                 clearInterval(activeServers[serverCode].timer);
 
                 if (activeServers[serverCode].startTimer) {
-                    io.to(serverCode).emit("songVoted", { message: "Song voted"});
+                    calcVotes(serverCode, true);
                     startTimer(30000);
                 }
             }
@@ -461,6 +481,52 @@ function startTimerCycle(serverCode) {
 
 function sendSongRequests(serverCode) {
     io.to(serverCode).emit("requestedSongs", { songs: activeServers[serverCode].songRequests });
+}
+
+function calcVotes(serverCode, endTimer) {
+    const server = activeServers[serverCode];
+
+    if (server) {
+        if (activeServers[serverCode].votes.length === 0) {
+            if (endTimer) {
+                io.to(serverCode).emit("songVoted", {songURI: null});
+            }
+
+            io.to(serverCode).emit("updateVoteList", {votes: []});
+
+        } else {
+            const orderedList = orderList(serverCode);
+
+            if (endTimer) {
+                io.to(serverCode).emit("songVoted", {songURI: orderedList[0]});
+                orderedList.shift();
+                // delete the voted song from list
+            }
+
+            // without the voted song
+            io.to(serverCode).emit("updateVoteList", {votes: orderedList});
+        }
+    }
+}
+
+function orderList(serverCode) {
+    const server = activeServers[serverCode];
+
+    if (server) {
+        const votesArray = Object.keys(dictionary).map((key) => ({
+            uri: key,
+            votes: dictionary[key].votes,
+            name: dictionary[key].name,
+            artists: dictionary[key].artists,
+            image: dictionary[key].image,
+          }));
+        
+          // Sort the array by the "votes" property in descending order
+          const sortedVotes = votesArray.sort((a, b) => b.votes - a.votes);
+        
+          return sortedVotes;
+    }
+
 }
 
 function calculateTopSong(serverCode) {
